@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>RallyUp - Smart Calendar Links</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex,nofollow,noarchive" />
+ 
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.snow.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+      min-height: 100vh;
+      padding: 0;
+    }
+    .top-bar {
+      background: white;
+      padding: 20px 30px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 0;
+	  max-width:900px;
+	  margin:auto;
+    }
+    .top-bar img {
+      height: 50px;
+      display: block;
+    }
+    .container { 
+      max-width: 900px; 
+      margin: 0 auto; 
+      background: white; 
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .header { 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+      color: white; 
+      padding: 40px 30px; 
+      text-align: center;
+    }
+    .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+    .header p { font-size: 1.1em; opacity: 0.95; }
+    .content { padding: 40px 30px; }
+    .info-box { 
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); 
+      border-left: 4px solid #667eea; 
+      padding: 20px; 
+      border-radius: 8px; 
+      margin-bottom: 30px; 
+    }
+    .info-box h3 { color: #333; margin-bottom: 12px; }
+    .info-box ul { list-style: none; padding-left: 0; }
+    .info-box li { padding: 5px 0; color: #555; }
+    .info-box li:before { content: "✓ "; color: #667eea; font-weight: bold; margin-right: 8px; }
+    .form-group { margin-bottom: 24px; }
+    .form-group label { display: block; font-weight: 600; color: #333; margin-bottom: 8px; font-size: 0.95em; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 8px;
+      font-size: 1em; transition: all 0.3s ease; font-family: inherit;
+    }
+    .form-group input[type="date"], .form-group input[type="time"] { cursor: pointer; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    .form-group textarea { resize: vertical; min-height: 100px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+    .error-input { border-color: #e74c3c !important; animation: shake 0.3s; }
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+    .error-message { color: #e74c3c; font-size: 0.85em; margin-top: 5px; display: none; }
+    .error-message.show { display: block; }
+    .toggle-wrapper { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .toggle-switch { position: relative; width: 60px; height: 30px; background: #ccc; border-radius: 30px; cursor: pointer; transition: background 0.3s; }
+    .toggle-switch.active { background: #667eea; }
+    .toggle-switch::after {
+      content: ''; position: absolute; width: 26px; height: 26px; background: white;
+      border-radius: 50%; top: 2px; left: 2px; transition: transform 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .toggle-switch.active::after { transform: translateX(30px); }
+    .toggle-label { font-weight: 600; color: #333; cursor: pointer; }
+    .btn-primary {
+      width: 100%; padding: 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white; border: none; border-radius: 8px; font-size: 1.1em; font-weight: 600;
+      cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; margin-top: 10px;
+    }
+    .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+    .results-section { margin-top: 40px; padding-top: 40px; border-top: 2px solid #f0f0f0; display: none; }
+    .results-section.show { display: block; animation: slideIn 0.4s ease; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .results-header { text-align: center; margin-bottom: 30px; }
+    .results-header h2 { color: #333; font-size: 1.8em; margin-bottom: 8px; }
+    .results-subtitle { color: #666; font-size: 0.95em; }
+    .calendar-tabs { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 30px; }
+    .calendar-tab {
+      padding: 14px 12px; background: #f5f5f5; border: 2px solid #e0e0e0; border-radius: 8px;
+      cursor: pointer; text-align: center; font-weight: 600; transition: all 0.3s; color: #666; font-size: 0.9em;
+    }
+    .calendar-tab:hover { background: #e8e8e8; border-color: #667eea; }
+    .calendar-tab.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-color: #667eea; transform: scale(1.05); }
+    .link-display { background: #f8f9fa; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+    .link-input-group { display: flex; gap: 12px; align-items: stretch; }
+    .link-input-group input {
+      flex: 1; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 6px;
+      font-family: 'Courier New', monospace; font-size: 0.9em; background: white;
+    }
+    .btn-copy, .btn-download {
+      padding: 12px 24px; background: #28a745; color: white; border: none;
+      border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s; white-space: nowrap;
+    }
+    .btn-copy:hover, .btn-download:hover { background: #218838; transform: scale(1.05); }
+    .btn-copy.copied { background: #007bff; }
+    .link-info { margin-top: 12px; padding: 12px; background: white; border-radius: 6px; font-size: 0.9em; color: #666; line-height: 1.5; }
+    .preview-card { background: white; border: 2px solid #e0e0e0; border-radius: 8px; padding: 24px; margin-top: 20px; }
+    .preview-card h3 { color: #667eea; margin-bottom: 16px; font-size: 1.3em; }
+    .preview-item { display: flex; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #f0f0f0; }
+    .preview-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .preview-label { font-weight: 600; color: #555; min-width: 120px; }
+    .preview-value { color: #333; flex: 1; word-break: break-word; }
+    .toast {
+      position: fixed; bottom: 30px; right: 30px; background: #333; color: white;
+      padding: 16px 24px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      transform: translateY(100px); opacity: 0; transition: all 0.3s; z-index: 1001; max-width: 350px;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.error { background: #e74c3c; }
+    .char-counter { font-size: 0.85em; color: #999; text-align: right; margin-top: 4px; }
+    .char-counter.warning { color: #f39c12; font-weight: 600; }
+    
+    #description-editor {
+      min-height: 160px;
+      background: white;
+    /*  border: 2px solid #e0e0e0; */
+   /*   border-radius: 8px; */
+    }
+    #description-editor:focus-within {
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    .ql-toolbar {
+    /*  border: none !important; */
+      border-bottom: 2px solid #e0e0e0 !important;
+      border-radius: 8px 8px 0 0;
+    }
+    .ql-container {
+    /*  border: none !important; */
+      font-family: inherit;
+      font-size: 1em;
+    }
+    
+    @media (max-width: 768px) {
+      .top-bar { padding: 15px 20px; }
+      .top-bar img { height: 40px; }
+      .header h1 { font-size: 1.8em; }
+      .header p { font-size: 1em; }
+      .header { padding: 30px 20px; }
+      .form-row { grid-template-columns: 1fr; }
+      .calendar-tabs { grid-template-columns: 1fr; }
+      .link-input-group { flex-direction: column; }
+      .content { padding: 30px 20px; }
+      .toast { right: 10px; left: 10px; bottom: 10px; }
+    }
+  </style>
+  
+ 
+</head>
+<body>
+  
+
+
+<style>
+.floating-help-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background-color: #0066CC;
+    color: white;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.4);
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.floating-help-btn:hover {
+    background-color: #0052a3;
+    transform: scale(1.1);
+}
+
+.help-icon {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.help-text {
+    font-size: 10px;
+    margin-top: 2px;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .floating-help-btn {
+        bottom: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+    }
+}
+</style>
+  
+ 
+
+  <div class="container">
+    <div class="header">
+      <h1>📅 RallyUp</h1>
+      <p>Create smart calendar links in seconds</p>
+    </div>
+    
+    <div class="content">
+      <div class="info-box">
+        <h3>💡 Why Use Smart Calendar Links?</h3>
+        <ul>
+          <li>One link works for all calendar platforms</li>
+          <li>Auto-detects recipient's email client</li>
+          <li>Perfect for email campaigns and invitations</li>
+          <li>No manual calendar file attachments needed</li>
+          
+        </ul>
+      
+      </div>
+      
+      <form id="eventForm" novalidate>
+        <div class="form-group">
+          <label for="title">📌 Event Title *</label>
+          <input type="text" id="title" maxlength="200" required placeholder="e.g., Q4 Sales Review Meeting">
+          <div class="char-counter" id="titleCounter">0 / 200</div>
+          <div class="error-message" id="titleError">Please enter an event title</div>
+        </div>
+      
+        <div class="form-group">
+          <label for="description">📝 Description *</label>
+          <div id="description-editor"></div>
+          <textarea id="description" name="description" maxlength="1000" required style="display:none;"></textarea>
+          <div class="char-counter" id="descCounter">0 / 1000</div>
+          <div class="error-message" id="descError">Please enter a description</div>
+        </div>
+        
+        <div class="form-group">
+          <label for="location">📍 Location / Meeting Link *</label>
+          <input type="text" id="location" maxlength="500" required placeholder="e.g., Conference Room A or https://zoom.us/j/123456">
+          <div class="char-counter" id="locationCounter">0 / 500</div>
+          <div class="error-message" id="locationError">Please enter a location or link</div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="startDate">📅 Start Date *</label>
+            <input type="date" id="startDate" required>
+            <div class="error-message" id="startDateError">Please select a start date</div>
+          </div>
+          <div class="form-group">
+            <label for="startTime">⏰ Start Time</label>
+            <input type="time" id="startTime">
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="endDate">📅 End Date *</label>
+            <input type="date" id="endDate" required>
+            <div class="error-message" id="endDateError">Please select an end date</div>
+          </div>
+          <div class="form-group">
+            <label for="endTime">⏰ End Time</label>
+            <input type="time" id="endTime">
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="timezone">🌍 Timezone *</label>
+          <select id="timezone" required>
+            <option value="">Select Timezone</option>
+            <option value="Pacific/Honolulu">(UTC-10:00) Hawaii</option>
+            <option value="America/Anchorage">(UTC-09:00) Alaska</option>
+            <option value="America/Los_Angeles">(UTC-08:00) Pacific Time (US & Canada)</option>
+            <option value="America/Denver">(UTC-07:00) Mountain Time (US & Canada)</option>
+            <option value="America/Chicago">(UTC-06:00) Central Time (US & Canada)</option>
+            <option value="America/New_York">(UTC-05:00) Eastern Time (US & Canada)</option>
+            <option value="America/Halifax">(UTC-04:00) Atlantic Time (Canada)</option>
+            <option value="America/Argentina/Buenos_Aires">(UTC-03:00) Buenos Aires</option>
+            <option value="Atlantic/Azores">(UTC-01:00) Azores</option>
+            <option value="Europe/London">(UTC+00:00) London</option>
+            <option value="Europe/Amsterdam">(UTC+01:00) Amsterdam, Berlin, Rome</option>
+            <option value="Europe/Athens">(UTC+02:00) Athens, Istanbul</option>
+            <option value="Asia/Dubai">(UTC+04:00) Dubai</option>
+            <option value="Asia/Kolkata">(UTC+05:30) Mumbai, Delhi</option>
+            <option value="Asia/Bangkok">(UTC+07:00) Bangkok</option>
+            <option value="Asia/Singapore">(UTC+08:00) Singapore</option>
+            <option value="Asia/Tokyo">(UTC+09:00) Tokyo</option>
+            <option value="Australia/Sydney">(UTC+10:00) Sydney</option>
+            <option value="Pacific/Auckland">(UTC+12:00) Auckland</option>
+          </select>
+          <div class="error-message" id="timezoneError">Please select a timezone</div>
+        </div>
+        
+        <div class="toggle-wrapper">
+          <div class="toggle-switch" id="allDayToggle"></div>
+          <label class="toggle-label">All Day Event</label>
+        </div>
+        
+        <button type="submit" class="btn-primary">Generate Calendar Links 🚀</button>
+      </form>
+      
+      <div class="results-section" id="resultsSection">
+        <div class="results-header">
+          <h2>✨ Your Calendar Links Are Ready!</h2>
+          <p class="results-subtitle">Choose your preferred calendar platform below</p>
+        </div>
+        
+        <div class="calendar-tabs">
+          <div class="calendar-tab active" data-tab="smart">🔗 Smart Link</div>
+          <div class="calendar-tab" data-tab="google">📆 Google</div>
+          <div class="calendar-tab" data-tab="outlook">📧 Outlook</div>
+          <div class="calendar-tab" data-tab="office365">🏢 Office 365</div>
+          <div class="calendar-tab" data-tab="yahoo">🗓️ Yahoo</div>
+          <div class="calendar-tab" data-tab="apple">🍎 Apple (.ics)</div>
+        </div>
+        
+        <div class="link-display">
+          <div class="link-input-group">
+            <input type="text" id="currentLink" readonly>
+            <button class="btn-copy" id="actionBtn">Copy Link</button>
+          </div>
+          <div class="link-info" id="linkInfo"></div>
+        </div>
+        
+        <div class="preview-card">
+          <h3>📋 Event Preview</h3>
+          <div id="previewContent"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
+  
+<script>
+
+// Initialize Quill editor
+const quill = new Quill('#description-editor', {
+  theme: 'snow',
+  placeholder: 'Provide details about your event... You can paste Teams meeting details, Zoom links, agendas, etc.',
+  modules: {
+    toolbar: [
+      ['bold', 'italic', 'underline'],
+      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+      ['link'],
+      ['clean']
+    ]
+  }
+});
+
+const hiddenTextarea = document.getElementById('description');
+const descCounter = document.getElementById('descCounter');
+const descError = document.getElementById('descError');
+const MAX_DESC = 1000;
+
+// Hook assigned after DOMContentLoaded
+let updateSmartUrlLen = () => {};
+
+function syncQuillContent() {
+  hiddenTextarea.value = quill.root.innerHTML;
+  const plainText = quill.getText().trim();
+  const len = plainText.length;
+
+  // Base counter (enhanced later with Smart URL status)
+  descCounter.textContent = `${Math.min(len, MAX_DESC)} / ${MAX_DESC}`;
+  descCounter.classList.toggle('warning', len > MAX_DESC * 0.9);
+
+  if (len > MAX_DESC) {
+    quill.deleteText(MAX_DESC, len - MAX_DESC);
+  }
+
+  // Live Smart URL length update
+  updateSmartUrlLen();
+}
+
+quill.on('text-change', syncQuillContent);
+syncQuillContent();
+
+// Helper function to convert HTML to formatted plain text with links preserved
+function htmlToFormattedText(html) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  let text = '';
+
+  function processNode(node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      text += node.textContent;
+    } else if (node.nodeType === Node.ELEMENT_NODE) {
+      const tagName = node.tagName.toLowerCase();
+
+      if (tagName === 'a') {
+        const linkText = node.textContent.trim();
+        const href=node.getAttribute('href');
+        if (href) text += linkText + ': ' + href;
+        else text += linkText;
+      } else if (tagName === 'p') {
+        node.childNodes.forEach(child => processNode(child));
+        text += '\n\n';
+      } else if (tagName === 'br') {
+        text += '\n';
+      } else if (tagName === 'ul' || tagName === 'ol') {
+        text += '\n';
+        node.childNodes.forEach(child => processNode(child));
+        text += '\n';
+      } else if (tagName === 'li') {
+        text += '• ';
+        node.childNodes.forEach(child => processNode(child));
+        text += '\n';
+      } else {
+        node.childNodes.forEach(child => processNode(child));
+      }
+    }
+  }
+
+  tmp.childNodes.forEach(node => processNode(node));
+  text = text.replace(/\n{3,}/g, '\n\n');
+  return text.trim();
+}
+
+// Main application
+document.addEventListener('DOMContentLoaded', function () {
+  if (typeof luxon === 'undefined') {
+    alert('Required library failed to load. Please check your internet connection and refresh.');
+    return;
+  }
+
+  const { DateTime } = luxon;
+
+  let generatedLinks = {};
+  let eventData = {};
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('startDate').min = today;
+  document.getElementById('endDate').min = today;
+
+  // URL limit
+  const MAX_URL_LEN = 2000;
+
+  // Make entire date/time input clickable
+  ['startDate', 'endDate', 'startTime', 'endTime'].forEach(id => {
+    const input = document.getElementById(id);
+    input.addEventListener('click', function () { this.showPicker?.(); });
+    input.addEventListener('focus', function () { this.showPicker?.(); });
+  });
+
+  const setupCounter = (id, counterId, max) => {
+    const el = document.getElementById(id);
+    const counter = document.getElementById(counterId);
+    el.addEventListener('input', () => {
+      const len = el.value.length;
+      counter.textContent = `${len} / ${max}`;
+      counter.classList.toggle('warning', len > max * 0.9);
+
+      // These fields affect Smart URL payload too
+      updateSmartUrlLen();
+    });
+    el.addEventListener('change', updateSmartUrlLen);
+  };
+
+  setupCounter('title', 'titleCounter', 200);
+  setupCounter('location', 'locationCounter', 500);
+
+  const toggle = document.getElementById('allDayToggle');
+  const startTime = document.getElementById('startTime');
+  const endTime = document.getElementById('endTime');
+
+  toggle.addEventListener('click', () => {
+    const active = toggle.classList.toggle('active');
+    startTime.disabled = active;
+    endTime.disabled = active;
+    if (active) { startTime.value = ''; endTime.value = ''; }
+    setTimeout(updateSmartUrlLen, 0);
+  });
+
+  const validate = (id, errorId, msg) => {
+    const el = document.getElementById(id);
+    const err = document.getElementById(errorId);
+    let valid;
+
+    if (id === 'description') valid = quill.getText().trim() !== '';
+    else valid = el.value.trim() !== '';
+
+    el.classList.toggle('error-input', !valid);
+    err.classList.toggle('show', !valid);
+    if (!valid) err.textContent = msg;
+
+    return valid;
+  };
+
+  const showToast = (msg, type = 'success') => {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.className = 'toast show' + (type === 'error' ? ' error' : '');
+    setTimeout(() => toast.classList.remove('show'), 2000);
+  };
+
+  // ==========================================================
+  // Real-time Smart URL length calculator + UI feedback
+  // ==========================================================
+  const submitBtn = document.querySelector('#eventForm button[type="submit"]');
+
+  // =======================
+  // NEW: Tooltip for disabled submit button (no HTML changes)
+  // =======================
+  const disabledTip = document.createElement('div');
+  disabledTip.id = 'disabled-submit-tooltip';
+  disabledTip.style.position = 'fixed';
+  disabledTip.style.zIndex = '2000';
+  disabledTip.style.maxWidth = '320px';
+  disabledTip.style.padding = '10px 12px';
+  disabledTip.style.borderRadius = '8px';
+  disabledTip.style.background = '#333';
+  disabledTip.style.color = '#fff';
+  disabledTip.style.fontSize = '13px';
+  disabledTip.style.lineHeight = '1.35';
+  disabledTip.style.boxShadow = '0 6px 18px rgba(0,0,0,0.25)';
+  disabledTip.style.pointerEvents = 'none';
+  disabledTip.style.opacity = '0';
+  disabledTip.style.transform = 'translateY(6px)';
+  disabledTip.style.transition = 'opacity 120ms ease, transform 120ms ease';
+  disabledTip.style.display = 'none';
+  document.body.appendChild(disabledTip);
+
+  const showDisabledTip = (btn, text) => {
+    if (!btn || !text) return;
+    disabledTip.textContent = text;
+    disabledTip.style.display = 'block';
+
+    const r = btn.getBoundingClientRect();
+    // Position: centered above the button
+    const left = Math.min(
+      window.innerWidth - 16,
+      Math.max(16, r.left + (r.width / 2))
+    );
+    const top = Math.max(16, r.top - 10);
+
+    disabledTip.style.left = `${left}px`;
+    disabledTip.style.top = `${top}px`;
+    disabledTip.style.transform = 'translate(-50%, -100%)';
+
+    // animate in
+    requestAnimationFrame(() => {
+      disabledTip.style.opacity = '1';
+      disabledTip.style.transform = 'translate(-50%, -100%) translateY(0)';
+    });
+  };
+
+  const hideDisabledTip = () => {
+    if (disabledTip.style.display === 'none') return;
+    disabledTip.style.opacity = '0';
+    disabledTip.style.transform = 'translate(-50%, -100%) translateY(6px)';
+    setTimeout(() => {
+      disabledTip.style.display = 'none';
+    }, 140);
+  };
+
+  // Centralized enable/disable with reason (used by live URL validation + submit-time)
+  const setSubmitDisabled = (isDisabled, reason = '') => {
+    if (!submitBtn) return;
+    submitBtn.disabled = isDisabled;
+    submitBtn.dataset.disabledReason = isDisabled ? reason : '';
+    submitBtn.title = isDisabled ? reason : ''; // native tooltip may still show in some browsers
+    submitBtn.setAttribute('aria-disabled', isDisabled ? 'true' : 'false');
+
+    if (!isDisabled) hideDisabledTip();
+  };
+
+  // Disabled buttons often don't fire mouse events reliably.
+  // Use elementFromPoint to detect hover and display tooltip.
+  let __hoveringDisabledSubmit = false;
+
+  document.addEventListener('mousemove', (e) => {
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const btn = el?.closest?.('#eventForm button[type="submit"]');
+    const reason = btn?.dataset?.disabledReason;
+
+    if (btn && btn.disabled && reason) {
+      if (!__hoveringDisabledSubmit) __hoveringDisabledSubmit = true;
+      showDisabledTip(btn, reason);
+    } else {
+      if (__hoveringDisabledSubmit) __hoveringDisabledSubmit = false;
+      hideDisabledTip();
+    }
+  });
+
+  // Hide tooltip on scroll/resize too (prevents wrong positioning)
+  window.addEventListener('scroll', hideDisabledTip, true);
+  window.addEventListener('resize', hideDisabledTip);
+
+  const computeSmartUrlLength = () => {
+    const title = document.getElementById('title').value || '';
+    const loc = document.getElementById('location').value || '';
+    const tz = document.getElementById('timezone').value || '';
+    const sd = document.getElementById('startDate').value || '';
+    const ed = document.getElementById('endDate').value || '';
+
+    if (!tz || !sd || !ed) return null;
+
+    const isAllDay = toggle.classList.contains('active');
+    const st = startTime.value || '00:00';
+    const et = endTime.value || '23:59';
+
+    const startDT = isAllDay
+      ? DateTime.fromISO(sd, { zone: tz })
+      : DateTime.fromISO(`${sd}T${st}`, { zone: tz });
+
+    const endDT = isAllDay
+      ? DateTime.fromISO(ed, { zone: tz }).plus({ days: 1 })
+      : DateTime.fromISO(`${ed}T${et}`, { zone: tz });
+
+    if (!startDT.isValid || !endDT.isValid) return null;
+
+    const fmtOff = dt => dt.toFormat("yyyy-MM-dd'T'HH:mm:ssZZ");
+    const sOff = fmtOff(startDT);
+    const eOff = fmtOff(endDT);
+
+    const descHtml = hiddenTextarea.value || '';
+    const trimmedDesc = descHtml.replace(/\s+/g, ' ').trim();
+
+    const smartCalendarData = {
+      title: title,
+      description: trimmedDesc,
+      location: loc,
+      start: sOff,
+      end: eOff,
+      timezone: tz
+    };
+
+    const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(smartCalendarData));
+    const smartUrl = `https://LetsGetSmart.github.io/smartcalendar?data=${compressed}`;
+    return smartUrl.length;
+  };
+
+  // Green / Yellow / Red status + disable submit when over
+  updateSmartUrlLen = () => {
+    const descPlainLen = quill.getText().trim().length;
+    const urlLen = computeSmartUrlLength();
+    const quillContainer = document.querySelector('#description-editor .ql-container');
+
+    const SAFE_LIMIT = 2000;       // green under this
+    const MAX_LIMIT = MAX_URL_LEN; // 2000
+
+    const setCounterStyle = (state) => {
+      descCounter.classList.remove('warning');
+      descCounter.style.fontWeight = '400';
+      descCounter.style.color = '#999';
+
+      if (state === 'ok') {
+        descCounter.style.color = '#28a745'; // green
+        descCounter.style.fontWeight = '600';
+      } else if (state === 'warn') {
+        descCounter.style.color = '#f39c12'; // yellow/orange
+        descCounter.style.fontWeight = '600';
+      } else if (state === 'danger') {
+        descCounter.style.color = '#e74c3c'; // red
+        descCounter.style.fontWeight = '700';
+      }
+    };
+
+    if (urlLen === null) {
+      descCounter.textContent = `Smart URL length: -- / ${MAX_LIMIT}`;
+      descCounter.classList.toggle('warning', descPlainLen > MAX_DESC * 0.9);
+
+      if (descError?.dataset?.urlLenError === '1') {
+        descError.classList.remove('show');
+        delete descError.dataset.urlLenError;
+      }
+      quillContainer?.classList.remove('error-input');
+
+      setSubmitDisabled(false);
+      return;
+    }
+
+    const overBy = urlLen - MAX_LIMIT;
+
+    let state = 'ok';
+    let statusText = '✅ OK';
+
+    if (urlLen > MAX_LIMIT) {
+      state = 'danger';
+      statusText = '❌ Over limit';
+    } else if (urlLen > SAFE_LIMIT) {
+      state = 'warn';
+      statusText = '⚠️ Close';
+    }
+
+    descCounter.textContent =
+      `Smart URL length: ${urlLen} / ${MAX_LIMIT} | ${statusText}`;
+
+    setCounterStyle(state);
+
+    if (descPlainLen > 0 && overBy > 0) {
+      descError.textContent = `Smart link is too long by ${overBy} characters. Please reduce the Description content.`;
+      descError.classList.add('show');
+      descError.dataset.urlLenError = '1';
+
+      quillContainer?.classList.add('error-input');
+
+      setSubmitDisabled(
+        true,
+        `Cannot generate: Smart link is over the limit by ${overBy} characters. Shorten Description to continue.`
+      );
+    } else {
+      if (descError?.dataset?.urlLenError === '1') {
+        descError.classList.remove('show');
+        delete descError.dataset.urlLenError;
+      }
+      quillContainer?.classList.remove('error-input');
+
+      setSubmitDisabled(false);
+    }
+  };
+
+  // Recompute URL length whenever these fields change
+  ['title', 'location', 'startDate', 'endDate', 'startTime', 'endTime', 'timezone'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input', updateSmartUrlLen);
+    el.addEventListener('change', updateSmartUrlLen);
+  });
+
+  // Run once on load
+  setTimeout(updateSmartUrlLen, 0);
+
+  document.getElementById('eventForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    let valid = true;
+
+    valid &= validate('title', 'titleError', 'Please enter an event title');
+    valid &= validate('description', 'descError', 'Please enter a description');
+    valid &= validate('location', 'locationError', 'Please enter a location');
+    valid &= validate('startDate', 'startDateError', 'Please select a start date');
+    valid &= validate('endDate', 'endDateError', 'Please select an end date');
+    valid &= validate('timezone', 'timezoneError', 'Please select a timezone');
+
+    const isAllDay = toggle.classList.contains('active');
+    if (!isAllDay && (!startTime.value || !endTime.value)) {
+      showToast('Please enter times or enable "All Day Event"', 'error');
+      valid = false;
+    }
+
+    // Block submit if Smart URL is already over limit
+    const liveLen = computeSmartUrlLength();
+    if (liveLen !== null && liveLen > MAX_URL_LEN) {
+      const overBy = liveLen - MAX_URL_LEN;
+
+      descError.textContent = `Smart link is too long by ${overBy} characters. Please reduce the Description content.`;
+      descError.classList.add('show');
+      descError.dataset.urlLenError = '1';
+
+      document.querySelector('#description-editor .ql-container')?.classList.add('error-input');
+      document.getElementById('description-editor').scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      setSubmitDisabled(
+        true,
+        `Cannot generate: Smart link is over the limit by ${overBy} characters. Shorten Description to continue.`
+      );
+      return;
+    }
+
+    if (!valid) {
+      document.querySelector('.error-input')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    const sd = document.getElementById('startDate').value;
+    const ed = document.getElementById('endDate').value;
+    const st = startTime.value || '00:00';
+    const et = endTime.value || '23:59';
+    const tz = document.getElementById('timezone').value;
+
+    try {
+      const startDT = isAllDay ? DateTime.fromISO(sd, { zone: tz }) : DateTime.fromISO(`${sd}T${st}`, { zone: tz });
+      const endDT = isAllDay ? DateTime.fromISO(ed, { zone: tz }) : DateTime.fromISO(`${ed}T${et}`, { zone: tz });
+
+      if (!startDT.isValid || !endDT.isValid) {
+        showToast('Invalid date or time. Please check your entries.', 'error');
+        return;
+      }
+
+      if (endDT < startDT) {
+        showToast('End date/time must be after start date/time', 'error');
+        return;
+      }
+
+      const ok = generateLinks();
+      if (!ok) return;
+
+      document.getElementById('resultsSection').classList.add('show');
+      setTimeout(() => {
+        document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+
+      showToast('Calendar links generated successfully! ✨');
+    } catch (err) {
+      showToast('Error processing dates. Please try again.', 'error');
+      console.error(err);
+    }
+  });
+
+  function generateLinks() {
+    const title = document.getElementById('title').value;
+    const desc = hiddenTextarea.value;
+    const loc = document.getElementById('location').value;
+    const tz = document.getElementById('timezone').value;
+    const isAllDay = toggle.classList.contains('active');
+    const sd = document.getElementById('startDate').value;
+    const ed = document.getElementById('endDate').value;
+    const st = startTime.value || '00:00';
+    const et = endTime.value || '23:59';
+
+    const startDT = isAllDay ? DateTime.fromISO(sd, { zone: tz }) : DateTime.fromISO(`${sd}T${st}`, { zone: tz });
+    const endDT = isAllDay ? DateTime.fromISO(ed, { zone: tz }).plus({ days: 1 }) : DateTime.fromISO(`${ed}T${et}`, { zone: tz });
+
+    const fmtUTC = dt => dt.toUTC().toFormat("yyyyMMdd'T'HHmmss'Z'");
+    const fmtOff = dt => dt.toFormat("yyyy-MM-dd'T'HH:mm:ssZZ");
+
+    const sUTC = fmtUTC(startDT);
+    const eUTC = fmtUTC(endDT);
+    const sOff = fmtOff(startDT);
+    const eOff = fmtOff(endDT);
+
+    const enc = s => encodeURIComponent(s);
+
+    const trimmedDesc = desc.replace(/\s+/g, ' ').trim();
+
+    const smartCalendarData = {
+      title: title,
+      description: trimmedDesc,
+      location: loc,
+      start: sOff,
+      end: eOff,
+      timezone: tz
+    };
+
+    const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(smartCalendarData));
+    const smartCalendarURL = `https://LetsGetSmart.github.io/smartcalendar?data=${compressed}`;
+
+    if (smartCalendarURL.length > MAX_URL_LEN) {
+      const currentLen = smartCalendarURL.length;
+      const overBy = currentLen - MAX_URL_LEN;
+
+      alert(
+        `Smart URL is too long (${currentLen} characters).\n\n` +
+        `Please reduce the content length in the Description field.\n` +
+        `You need to remove ~${overBy} characters.`
+      );
+
+      const descErrEl = document.getElementById('descError');
+      descErrEl.textContent =
+        `Generated Smart URL exceeded ${MAX_URL_LEN} characters. Please shorten the Description (reduce ~${overBy} characters).`;
+      descErrEl.classList.add('show');
+      descErrEl.dataset.urlLenError = '1';
+
+      document.querySelector('#description-editor .ql-container')?.classList.add('error-input');
+      document.getElementById('description-editor')
+        .scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      setSubmitDisabled(
+        true,
+        `Cannot generate: Smart link is over the limit by ${overBy} characters. Shorten Description to continue.`
+      );
+
+      return false;
+    }
+
+    generatedLinks = {
+      smart: smartCalendarURL,
+      google: `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${enc(title)}&dates=${sUTC}/${eUTC}&details=${enc(desc)}&location=${enc(loc)}&ctz=${tz}`,
+      outlook: `https://outlook.live.com/calendar/0/action/compose?subject=${enc(title)}&body=${enc(desc)}&location=${enc(loc)}&startdt=${enc(sOff)}&enddt=${enc(eOff)}`,
+      office365: `https://outlook.office.com/calendar/0/action/compose?subject=${enc(title)}&body=${enc(desc)}&location=${enc(loc)}&startdt=${enc(sOff)}&enddt=${enc(eOff)}`,
+      yahoo: `https://calendar.yahoo.com/?v=60&title=${enc(title)}&st=${sUTC}&et=${eUTC}&desc=${enc(desc)}&in_loc=${enc(loc)}`
+    };
+
+    eventData = {
+      title, desc, loc, tz, startDT, endDT, isAllDay,
+      startDisp: startDT.toLocaleString(DateTime.DATETIME_FULL),
+      endDisp: endDT.toLocaleString(DateTime.DATETIME_FULL)
+    };
+
+    updateDisplay('smart');
+    updatePreview();
+
+    setSubmitDisabled(false);
+    return true;
+  }
+
+  document.querySelectorAll('.calendar-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const tabName = tab.dataset.tab;
+      document.querySelectorAll('.calendar-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      updateDisplay(tabName);
+    });
+  });
+
+  function updateDisplay(tab) {
+    const input = document.getElementById('currentLink');
+    const btn = document.getElementById('actionBtn');
+    const info = document.getElementById('linkInfo');
+
+    if (tab === 'apple') {
+      input.value = eventData.title + '.ics';
+      btn.textContent = 'Download';
+      btn.onclick = downloadICS;
+      btn.className = 'btn-download';
+      info.textContent = 'Click to download the .ics file for Apple Calendar, Outlook desktop, or any ICS-compatible calendar application.';
+    } else {
+      input.value = generatedLinks[tab];
+      btn.textContent = 'Copy Link';
+      btn.onclick = () => copyLink();
+      btn.className = 'btn-copy';
+
+      const infos = {
+        smart: 'This smart link auto-detects recipient\'s email platform and works with Eloqua tracking codes. Perfect for email campaigns!',
+        google: 'Direct link to add event to Google Calendar. Best for Gmail users.',
+        outlook: 'Link for Outlook.com and Hotmail users.',
+        office365: 'Link for Office 365 and corporate Outlook users.',
+        yahoo: 'Link for Yahoo Calendar users.'
+      };
+      info.textContent = infos[tab];
+    }
+  }
+
+  function copyLink() {
+    const input = document.getElementById('currentLink');
+    input.select();
+    input.setSelectionRange(0, 99999);
+
+    navigator.clipboard.writeText(input.value).then(() => {
+      const btn = document.getElementById('actionBtn');
+      btn.textContent = 'Copied! ✓';
+      btn.classList.add('copied');
+      showToast('Link copied to clipboard!');
+      setTimeout(() => {
+        btn.textContent = 'Copy Link';
+        btn.classList.remove('copied');
+      }, 1000);
+    }).catch(() => {
+      showToast('Please manually copy the link', 'error');
+    });
+  }
+
+  function downloadICS() {
+    const esc = str => str.replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
+    const formattedDescription = htmlToFormattedText(eventData.desc);
+
+    const ics = `BEGIN:VCALENDAR
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+SUMMARY:${esc(eventData.title)}
+DESCRIPTION:${esc(formattedDescription)}
+LOCATION:${esc(eventData.loc)}
+DTSTART:${eventData.startDT.toUTC().toFormat("yyyyMMdd'T'HHmmss'Z'")}
+DTEND:${eventData.endDT.toUTC().toFormat("yyyyMMdd'T'HHmmss'Z'")}
+DTSTAMP:${DateTime.now().toUTC().toFormat("yyyyMMdd'T'HHmmss'Z'")}
+UID:${Date.now()}@rallyup
+STATUS:CONFIRMED
+END:VEVENT
+END:VCALENDAR`;
+
+    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href=URL.createObjectURL(blob);
+    link.download = eventData.title.replace(/[^a-z0-9]/gi, '_') + '.ics';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+    showToast('Calendar file downloaded!');
+  }
+
+  function updatePreview() {
+    document.getElementById('previewContent').innerHTML = `
+      <div class="preview-item">
+        <div class="preview-label">Title:</div>
+        <div class="preview-value">${eventData.title}</div>
+      </div>
+      <div class="preview-item">
+        <div class="preview-label">Description:</div>
+        <div class="preview-value">${eventData.desc}</div>
+      </div>
+      <div class="preview-item">
+        <div class="preview-label">Location:</div>
+        <div class="preview-value">${eventData.loc}</div>
+      </div>
+      <div class="preview-item">
+        <div class="preview-label">Start:</div>
+        <div class="preview-value">${eventData.startDisp}</div>
+      </div>
+      <div class="preview-item">
+        <div class="preview-label">End:</div>
+        <div class="preview-value">${eventData.endDisp}</div>
+      </div>
+      <div class="preview-item">
+        <div class="preview-label">Timezone:</div>
+        <div class="preview-value">${eventData.tz}</div>
+      </div>
+    `;
+  }
+});
+</script>
+</body>
+</html>

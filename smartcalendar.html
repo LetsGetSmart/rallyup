@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow,noarchive" />
+ 
+  <title>Smart Add to Calendar Redirect</title>
+  
+  <style>
+    .smart {
+      background: #fafafa;
+      border-radius: 10px;
+      padding: 20px;
+      border: 1px solid #eee;
+      box-shadow: 2px 2px 5px #cdcdcd;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 2px;
+      box-sizing: border-box;
+      font-family: arial !important;
+    }
+    #div {
+      width: 60%;
+      margin: auto;
+      padding: 40px;
+      border: 1px solid #ccc;
+      font-family: arial !important;
+      background: #ffffff;
+      box-shadow: 1px 1px 10px #4a4949;
+      border-radius: 5px;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #607D8B;
+    }
+    .container {
+      margin-top: 0px;
+      margin-bottom: 40px;
+      border-bottom: 2px solid #eeeeee;
+    }
+    .message {
+      font-size: 1.2em;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      border: 0px solid #ccc;
+      padding: 20px;
+      width: 95%;
+      margin: auto;
+      margin-top: 0px;
+    }
+    .loader {
+      width: 24px;
+      height: 24px;
+      border: 4px solid #ccc;
+      border-top: 4px solid #333;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .calendar-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+    .calendar-options button {
+      margin: 5px;
+      padding: 12px 24px;
+      font-size: 1em;
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    .google-btn {
+      background-color: #4285F4;
+    }
+    .google-btn:hover {
+      background-color: #3367D6;
+      transform: scale(1.05);
+    }
+    .outlook-btn {
+      background-color: #0078D4;
+    }
+    .outlook-btn:hover {
+      background-color: #005A9E;
+      transform: scale(1.05);
+    }
+    .yahoo-btn {
+      background-color: #6001D2;
+    }
+    .yahoo-btn:hover {
+      background-color: #4B00A8;
+      transform: scale(1.05);
+    }
+    .ics-btn {
+      background-color: #6c757d;
+    }
+    .ics-btn:hover {
+      background-color: #5a6268;
+      transform: scale(1.05);
+    }
+    .cal-div {
+      font-weight: bold;
+      margin-bottom: 10px;
+      font-size: 1.1em;
+    }
+    .error-message {
+      color: #e74c3c;
+      background: #fee;
+      padding: 15px;
+      border-radius: 8px;
+      border: 2px solid #e74c3c;
+    }
+    @media (max-width: 768px) {
+      #div {
+        width: 90%;
+        padding: 20px;
+      }
+      .calendar-options {
+        flex-direction: column;
+      }
+      .calendar-options button {
+        width: 100%;
+      }
+    }
+  </style>
+  
+ 
+  
+</head>
+<body>
+
+<div id="div">
+ 
+  
+  <div class="message">
+    <div id="status">Redirecting you to your calendar...</div>
+    <div class="loader"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
+
+<script>
+  // Helper function to convert HTML to formatted plain text with links preserved
+  function htmlToFormattedText(html) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    
+    let text = '';
+    
+    function processNode(node) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        text += node.textContent;
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        const tagName = node.tagName.toLowerCase();
+        
+        // Handle links - extract both text and URL
+        if (tagName === 'a') {
+          const linkText = node.textContent.trim();
+          const href=node.getAttribute('href');
+          if (href) {
+            // Format: "Link Text: URL"
+            text += linkText + ': ' + href;
+          } else {
+            text += linkText;
+          }
+        }
+        // Handle paragraphs - add line breaks
+        else if (tagName === 'p') {
+          node.childNodes.forEach(child => processNode(child));
+          text += '\n\n';
+        }
+        // Handle line breaks
+        else if (tagName === 'br') {
+          text += '\n';
+        }
+        // Handle lists
+        else if (tagName === 'ul' || tagName === 'ol') {
+          text += '\n';
+          node.childNodes.forEach(child => processNode(child));
+          text += '\n';
+        }
+        // Handle list items
+        else if (tagName === 'li') {
+          text += '• ';
+          node.childNodes.forEach(child => processNode(child));
+          text += '\n';
+        }
+        // Handle bold/strong
+        else if (tagName === 'strong' || tagName === 'b') {
+          node.childNodes.forEach(child => processNode(child));
+        }
+        // Handle italic/em
+        else if (tagName === 'em' || tagName === 'i') {
+          node.childNodes.forEach(child => processNode(child));
+        }
+        // Handle other elements
+        else {
+          node.childNodes.forEach(child => processNode(child));
+        }
+      }
+    }
+    
+    tmp.childNodes.forEach(node => processNode(node));
+    
+    // Clean up excessive line breaks (more than 2 consecutive)
+    text = text.replace(/\n{3,}/g, '\n\n');
+    
+    return text.trim();
+  }
+
+  // Function to get URL parameter (for backward compatibility)
+  function getParam(name) {
+    const url = new URL(window.location.href);
+    return url.searchParams.get(name) || '';
+  }
+
+  // Function to escape ICS content
+  function encodeICS(text) {
+    return text.replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
+  }
+
+let encodedData = getParam('data');
+if (!encodedData) {
+  encodedData = window.location.hash.substring(1);
+}
+
+let title, description, eventLocation, start, end, timezone, domain;
+
+if (encodedData) {
+  try {
+    // Try LZ-String decompression first (NEW METHOD)
+    if (typeof LZString !== 'undefined') {
+      const decompressed = LZString.decompressFromEncodedURIComponent(encodedData);
+      if (decompressed) {
+        const decodedData = JSON.parse(decompressed);
+        title = decodedData.title || '';
+        description = decodedData.description || '';
+        eventLocation = decodedData.location || '';
+        start = decodedData.start || '';
+        end = decodedData.end || '';
+        timezone = decodedData.timezone || '';
+        domain = (decodedData.domain || '').toLowerCase();
+      } else {
+        throw new Error('Decompression failed');
+      }
+    } else {
+      throw new Error('LZString not loaded');
+    }
+  } catch (e) {
+    // Fallback to Base64 for backward compatibility with old links
+    try {
+      const decodedData = JSON.parse(decodeURIComponent(atob(encodedData)));
+      title = decodedData.title || '';
+      description = decodedData.description || '';
+      eventLocation = decodedData.location || '';
+      start = decodedData.start || '';
+      end = decodedData.end || '';
+      timezone = decodedData.timezone || '';
+      domain = (decodedData.domain || '').toLowerCase();
+    } catch (e2) {
+      console.error('Error decoding data:', e2);
+      document.querySelector('.message').innerHTML = `
+        <div class="error-message">
+          <strong>Error:</strong> Invalid calendar data. Please generate a new link.
+        </div>
+      `;
+    }
+  }
+  } else {
+    // LEGACY METHOD: Support old URL parameters for backward compatibility
+    title = getParam('title');
+    description = getParam('description');
+    eventLocation = getParam('location');
+    start = getParam('start');
+    end = getParam('end');
+    timezone = getParam('timezone');
+    domain = getParam('domain').toLowerCase();
+  }
+
+  // Only proceed if we have valid data
+  if (title && start && end) {
+    // Convert HTML description to formatted plain text with links preserved (for ICS only)
+    const formattedDescription = htmlToFormattedText(description);
+    
+    // Convert dates to UTC format for calendar links
+    const startUTC = new Date(start).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const endUTC = new Date(end).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+
+    // Encode parameters for URLs
+    const encodedTitle = encodeURIComponent(title);
+    const encodedDescription = encodeURIComponent(description); // Keep HTML for web calendars
+    const encodedLocation = encodeURIComponent(eventLocation);
+    const encodedStart = encodeURIComponent(start);
+    const encodedEnd = encodeURIComponent(end);
+
+    // Generate calendar links - using HTML description for rich formatting on web calendars
+    const googleLink = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodedTitle}&dates=${startUTC}/${endUTC}&details=${encodedDescription}&location=${encodedLocation}${timezone ? '&ctz=' + timezone : ''}`;
+    
+    const outlookLink = `https://outlook.office.com/calendar/0/action/compose?subject=${encodedTitle}&body=${encodedDescription}&location=${encodedLocation}&startdt=${encodedStart}&enddt=${encodedEnd}`;
+    
+    const yahooLink = `https://calendar.yahoo.com/?v=60&title=${encodedTitle}&st=${startUTC}&et=${endUTC}&desc=${encodedDescription}&in_loc=${encodedLocation}`;
+
+    // Generate ICS file content with formatted plain text description
+    const icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//LetsGetSmart//Smart Calendar//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+SUMMARY:${encodeICS(title)}
+DESCRIPTION:${encodeICS(formattedDescription)}
+LOCATION:${encodeICS(eventLocation)}
+DTSTART:${startUTC}
+DTEND:${endUTC}
+DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'}
+UID:${Date.now()}@LetsGetSmart.smartcalendar
+STATUS:CONFIRMED
+END:VEVENT
+END:VCALENDAR`;
+
+    // Function to download ICS file
+    function downloadICS() {
+      const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href=URL.createObjectURL(blob);
+      link.download = `${title.replace(/[^a-z0-9]/gi, '_')}.ics`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+    }
+
+    // Function to create calendar button
+    function createButton(label, url, className) {
+      const button = document.createElement('button');
+      button.textContent = label;
+      button.className = className;
+      button.onclick = () => {
+        if (url === '#') {
+          downloadICS();
+        } else {
+          window.location.href=url;
+        }
+      };
+      return button;
+    }
+
+    // Function to show manual calendar selection
+    function showOptions() {
+      const container = document.querySelector('.message');
+      container.innerHTML = '';
+
+      const titleDiv = document.createElement('div');
+      titleDiv.className = 'cal-div';
+      titleDiv.textContent = 'Select your preferred calendar:';
+
+      const optionsDiv = document.createElement('div');
+      optionsDiv.className = 'calendar-options';
+
+      optionsDiv.appendChild(createButton('📧 Outlook', outlookLink, 'outlook-btn'));
+      optionsDiv.appendChild(createButton('📆 Google Calendar', googleLink, 'google-btn'));
+      optionsDiv.appendChild(createButton('🗓️ Yahoo', yahooLink, 'yahoo-btn'));
+      optionsDiv.appendChild(createButton('🍎 Download .ICS', '#', 'ics-btn'));
+
+      container.appendChild(titleDiv);
+      container.appendChild(optionsDiv);
+    }
+
+    // Auto-redirect based on domain or show options
+    function redirectToCalendar() {
+      if (domain.includes('gmail.com') || domain.includes('googlemail.com')) {
+        window.location.href=googleLink;
+      } else if (
+        domain.includes('outlook.com') ||
+        domain.includes('office365.com') ||
+        domain.includes('microsoft.com') ||
+        domain.includes('live.com')
+      ) {
+        window.location.href=outlookLink;
+      } else if (domain.includes('yahoo.com')) {
+        window.location.href=yahooLink;
+      } else if (
+        domain.includes('icloud.com') ||
+        domain.includes('me.com') ||
+        domain.includes('mac.com')
+      ) {
+        downloadICS();
+      } else {
+        // No domain detected or unknown domain - show options
+        showOptions();
+      }
+    }
+
+    // Execute redirect
+    redirectToCalendar();
+
+    // Clean up URL (remove query parameters from browser history)
+    window.addEventListener('load', function () {
+      if (window.history.replaceState) {
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
+    });
+  }
+</script>
+
+</body>
+</html>
